@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Shelby County — Motivated Seller Leads</title>
+<style>
+  :root { --bg:#0b1020; --card:#141a2e; --ink:#e8ecf8; --muted:#8a93b2; --accent:#5af0c0; }
+  *{box-sizing:border-box} body{margin:0;font-family:-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg);color:var(--ink)}
+  header{padding:24px 32px;border-bottom:1px solid #222a44}
+  h1{margin:0;font-size:20px} .sub{color:var(--muted);font-size:13px;margin-top:4px}
+  .stats{display:flex;gap:24px;padding:16px 32px;flex-wrap:wrap}
+  .stat{background:var(--card);padding:12px 18px;border-radius:10px;min-width:140px}
+  .stat .n{font-size:22px;font-weight:600;color:var(--accent)}
+  .stat .l{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  table{width:calc(100% - 64px);margin:16px 32px;border-collapse:collapse;background:var(--card);
+    border-radius:10px;overflow:hidden;font-size:13px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid #1f2640;vertical-align:top}
+  th{background:#1a2140;color:var(--muted);font-weight:600;text-transform:uppercase;font-size:11px}
+  tr:hover td{background:#1a2140}
+  .score{display:inline-block;padding:2px 8px;border-radius:999px;font-weight:700;font-size:11px}
+  .s-hi{background:#1f6b4a;color:#bdf6dc} .s-md{background:#5a4a1a;color:#f6e3a1}
+  .s-lo{background:#3a2030;color:#f5b8c8}
+  .flag{display:inline-block;background:#23305c;color:#cfe0ff;padding:2px 6px;border-radius:6px;
+    font-size:10px;margin:1px}
+  a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<header>
+  <h1>Shelby County — Motivated Seller Leads</h1>
+  <div class="sub" id="sub">Loading…</div>
+</header>
+<div class="stats" id="stats"></div>
+<table id="tbl">
+  <thead><tr>
+    <th>Score</th><th>Type</th><th>Filed</th><th>Owner</th>
+    <th>Property</th><th>Mailing</th><th>Amount</th><th>Flags</th><th>Doc</th>
+  </tr></thead>
+  <tbody></tbody>
+</table>
+<script>
+async function load(){
+  const r = await fetch('records.json?_=' + Date.now());
+  const d = await r.json();
+  document.getElementById('sub').textContent =
+    `${d.source || ''} · ${d.date_range || ''} · fetched ${d.fetched_at || '—'}`;
+  const stats = [
+    ['Total', d.total || 0],
+    ['With address', d.with_address || 0],
+    ['Hot (≥70)', (d.records||[]).filter(x=>x.score>=70).length],
+  ];
+  document.getElementById('stats').innerHTML =
+    stats.map(([l,n])=>`<div class="stat"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+  const tb = document.querySelector('#tbl tbody');
+  tb.innerHTML = (d.records||[]).map(r=>{
+    const cls = r.score>=70?'s-hi':r.score>=50?'s-md':'s-lo';
+    return `<tr>
+      <td><span class="score ${cls}">${r.score}</span></td>
+      <td>${r.cat_label || r.cat || ''}</td>
+      <td>${r.filed || ''}</td>
+      <td>${r.owner || ''}</td>
+      <td>${[r.prop_address,r.prop_city,r.prop_zip].filter(Boolean).join(', ')}</td>
+      <td>${[r.mail_address,r.mail_city,r.mail_state,r.mail_zip].filter(Boolean).join(', ')}</td>
+      <td>${r.amount ? '$'+Number(r.amount).toLocaleString() : ''}</td>
+      <td>${(r.flags||[]).map(f=>`<span class="flag">${f}</span>`).join(' ')}</td>
+      <td><a href="${r.clerk_url}" target="_blank">${r.doc_num||'view'}</a></td>
+    </tr>`;
+  }).join('');
+}
+load();
+</script>
+</body>
+</html>
